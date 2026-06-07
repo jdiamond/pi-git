@@ -9,7 +9,7 @@ Every action that publishes content shows a review overlay before executing: app
 | Tool | Description |
 |------|-------------|
 | `git_commit` | Stage files and commit with a review step |
-| (more coming) | |
+| `git_create_pr` | Create a pull request with a review step |
 
 All tools use a `git_` prefix to avoid conflicts.
 
@@ -23,6 +23,8 @@ All tools use a `git_` prefix to avoid conflicts.
 
 ## Usage
 
+### Commit
+
 The agent stages files and commits in one call:
 
 ```
@@ -30,3 +32,19 @@ git_commit(message: "Fix: resolve race condition in pool shutdown", files: ["src
 ```
 
 A review overlay shows the commit message and lets you **[a]**pprove, **[e]**dit, or **[c]**ancel before the commit executes.
+
+### Create PR
+
+The agent creates a pull request with optional reviewers:
+
+```
+git_create_pr(
+  title: "Fix connection pool shutdown",
+  body: "The pool's close() could return before draining...",
+  base: "main",
+  draft: true,
+  reviewers: ["copilot-pull-request-reviewer[bot]"]
+)
+```
+
+Same review flow — approve, edit, or cancel before the PR is created.

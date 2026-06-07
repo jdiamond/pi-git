@@ -9,13 +9,15 @@ a chance to approve, edit, or cancel.
 All tools use a `git_` prefix to avoid conflicts with other extensions:
 `git_commit`, `git_create_pr`, `git_reply_to_comment`, etc.
 
-## PoC Scope (this milestone)
+## Current Scope (v0.1.0)
 
-One tool: `git_commit(message)`
+Two tools:
 
-- Commits whatever is currently staged (`git commit -m`)
-- Agent stages files beforehand via `bash: git add ...` (keeps this tool simple)
-- If nothing is staged, returns an error (agent should stage first)
+### `git_commit(message, files?)`
+
+- Commits with `git commit -m`
+- Optionally stages files inline via `files` parameter
+- If nothing is staged and no files provided, returns an error
 
 ### Review UX
 
@@ -46,13 +48,14 @@ When the agent calls `git_commit`, the extension shows a custom TUI overlay:
 - $EDITOR integration can be explored later if the built-in editor isn't sufficient
 - No config files yet — hardcoded behavior for the PoC
 
-## Future Tools (not in PoC)
+### `git_create_pr(title, body?, base?, draft?, reviewers?)`
 
-These are noted for later implementation. The review UX pattern established
-by `git_commit` will be reused.
+- Creates a PR via `gh pr create`
+- Supports reviewers (including copilot bot), draft flag, target branch
+
+## Future Tools
 
 - `git_amend_commit(message)` — like `git_commit` but amends
-- `git_create_pr(title, body, base?, head?, draft?)` — review then `gh pr create`
 - `git_get_pr_comments(pr_number)` — fetch copilot + human comments
 - `git_reply_to_comment(comment_id, body)` — review then reply
 - `git_resolve_thread(thread_id)` — mark resolved (no review needed, just confirm)
