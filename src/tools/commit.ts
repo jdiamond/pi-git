@@ -1,0 +1,100 @@
+import { resolve } from "node:path";
+import type {
+	ExtensionContext,
+	ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
+import {
+	getStagedFiles,
+	hasStagedChanges,
+	isGitRepo,
+	runCommit,
+	stageFiles,
+} from "../git.ts";
+import { reviewCommit } from "../review.ts";
+
+function formatFilesSection(
+	files: string[],
+	label: string,
+): string | undefined {
+	if (!files.length) return undefined;
+	return `${label}:\n  ${files.join("\n  ")}`;
+}
+
+function buildCommitSections(
+	files: string[] | undefined,
+	cwd: string,
+): string[] {
+	const sections: string[] = [];
+
+	if (files?.length) {
+		const existingFiles = getStagedFiles(cwd).filter((f) => !files.includes(f));
+		const es = formatFilesSection(existingFiles, "Already staged");
+		if (es) sections.push(es);
+
+		const s = formatFilesSection(files, "Files to stage");
+		if (s) sections.push(s);
+	}
+
+	return sections;
+}
+
+export function register(pi: {
+	registerTool: (tool: ToolDefinition) => void;
+}): void {
+	pi.registerTool({
+		name: "git_commit",
+		label: "Git Commit",
+		description:
+			"Create a git commit. Optionally takes a list of files to stage; otherwise commits already-staged changes. Shows a review overlay where the user can approve, edit, or cancel before the commit executes.",
+		parameters: Type.Object({
+			message: Type.String({ description: "The commit message" }),
+			files: Type.Optional(
+				Type.Array(Type.String(), {
+					description:
+						"Files to stage and commit (if omitted, commits already-staged changes)",
+				}),
+			),
+		}),
+		async execute(
+			_toolCallId: string,
+			params: { message: string; files?: string[] },
+			_signal: AbortSignal,
+			_onUpdate: unknown,
+			ctx: ExtensionContext,
+		) {
+			const cwd = resolve(ctx.cwd);
+
+			if (!isGitRepo(cwd)) {
+				throw new Error("Not inside a git repository.");
+			}
+
+			const files = params.files?.length ? params.files : undefined;
+
+			if (!files && !hasStagedChanges(cwd)) {
+				throw new Error(
+					"Nothing staged for commit. Pass `files` to stage specific files, or stage changes first.",
+				);
+			}
+
+			const result = await reviewCommit(ctx, cwd, params.message, (cwd) =>
+				buildCommitSections(files, cwd),
+			);
+
+			if (!result.approved) {
+				throw new Error("Commit cancelled by user.");
+			}
+
+			if (files) {
+				stageFiles(cwd, files);
+			}
+
+			const output = runCommit(cwd, result.message);
+
+			return {
+				content: [{ type: "text" as const, text: output || "Commit created." }],
+				details: { message: result.message, output, files },
+			};
+		},
+	});
+}
