@@ -22,6 +22,19 @@ function hasStagedChanges(cwd: string): boolean {
 	return result.status !== 0;
 }
 
+function getStagedFiles(cwd: string): string[] {
+	const result = spawnSync("git", ["diff", "--cached", "--name-only"], {
+		cwd,
+		encoding: "utf-8",
+		stdio: "pipe",
+	});
+	if (result.error) throw result.error;
+	if (result.status !== 0) {
+		throw new Error(result.stderr.trim() || "git diff --cached failed");
+	}
+	return result.stdout.trim().split("\n").filter(Boolean);
+}
+
 function stageFiles(cwd: string, files: string[]): void {
 	const result = spawnSync("git", ["add", "--", ...files], {
 		cwd,
@@ -47,24 +60,53 @@ function runCommit(cwd: string, message: string): string {
 	return result.stdout.trim();
 }
 
+function formatFilesSection(
+	files: string[],
+	label: string,
+): string | undefined {
+	if (!files.length) return undefined;
+	return `${label}:\n  ${files.join("\n  ")}`;
+}
+
+function buildCommitSections(
+	files: string[] | undefined,
+	cwd: string,
+): string[] {
+	const sections: string[] = [];
+
+	if (files?.length) {
+		const existingFiles = getStagedFiles(cwd).filter((f) => !files.includes(f));
+		const es = formatFilesSection(existingFiles, "Already staged");
+		if (es) sections.push(es);
+
+		const s = formatFilesSection(files, "Files to stage");
+		if (s) sections.push(s);
+	}
+
+	return sections;
+}
+
 async function reviewCommit(
 	ctx: ExtensionContext,
+	cwd: string,
 	initialMessage: string,
 	files?: string[],
 ): Promise<{ message: string; approved: boolean }> {
 	let message = initialMessage;
-	const filesSection = files?.length
-		? `\n\nFiles:\n  ${files.join("\n  ")}`
-		: "";
+	const sections = buildCommitSections(files, cwd);
+	const header = sections.length
+		? `📝 Git Commit:\n\n${sections.join("\n\n")}\n\n`
+		: `📝 Git Commit:\n\n`;
 
 	for (;;) {
-		const choice = await ctx.ui.select(
-			`📝 Commit:\n\n${message}${filesSection}`,
-			["approve", "edit", "cancel"],
-		);
+		const choice = await ctx.ui.select(`${header}${message}`, [
+			"Approve",
+			"Edit",
+			"Cancel",
+		]);
 
-		if (choice === "approve") return { message, approved: true };
-		if (choice === "cancel" || choice === undefined) {
+		if (choice === "Approve") return { message, approved: true };
+		if (choice === "Cancel" || choice === undefined) {
 			return { message, approved: false };
 		}
 
@@ -107,7 +149,7 @@ export default function (pi: ExtensionAPI) {
 				);
 			}
 
-			const result = await reviewCommit(ctx, params.message, files);
+			const result = await reviewCommit(ctx, cwd, params.message, files);
 
 			if (!result.approved) {
 				throw new Error("Commit cancelled by user.");
