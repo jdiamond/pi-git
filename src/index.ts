@@ -42,7 +42,7 @@ async function reviewCommit(
 	let message = initialMessage;
 
 	for (;;) {
-		const choice = await ctx.ui.select(`Commit:\n\n${message}`, [
+		const choice = await ctx.ui.select(`📝 Commit:\n\n${message}`, [
 			"approve",
 			"edit",
 			"cancel",
