@@ -9,7 +9,6 @@ import {
 	type Component,
 	Key,
 	matchesKey,
-	truncateToWidth,
 	visibleWidth,
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
@@ -95,12 +94,9 @@ class CommitReview implements Component {
 
 		const lines: string[] = [];
 		lines.push(
-			truncateToWidth(
-				this.theme.fg("border", `╭─`) +
-					this.theme.fg("toolTitle", title) +
-					this.theme.fg("border", `${"─".repeat(titlePad)}╮`),
-				width,
-			),
+			this.theme.fg("border", `╭─`) +
+				this.theme.fg("toolTitle", title) +
+				this.theme.fg("border", `${"─".repeat(titlePad)}╮`),
 		);
 
 		const borderFg = (s: string) => this.theme.fg("border", s);
@@ -111,10 +107,7 @@ class CommitReview implements Component {
 		for (const msgLine of messageLines) {
 			if (msgLine === "") {
 				lines.push(
-					truncateToWidth(
-						`${borderFg("│")}${" ".repeat(boxWidth - 2)}${borderFg("│")}`,
-						width,
-					),
+					`${borderFg("│")}${" ".repeat(boxWidth - 2)}${borderFg("│")}`,
 				);
 			} else {
 				const wrapped = wrapTextWithAnsi(msgLine, innerWidth);
@@ -122,19 +115,14 @@ class CommitReview implements Component {
 					const wlVisible = visibleWidth(wl);
 					const pad = Math.max(0, innerWidth - wlVisible);
 					lines.push(
-						truncateToWidth(
-							`${borderFg("│")}  ${messageFg(wl)}${" ".repeat(pad)}${borderFg("│")}`,
-							width,
-						),
+						`${borderFg("│")}  ${messageFg(wl)}${" ".repeat(pad)}${borderFg("│")}`,
 					);
 				}
 			}
 		}
 
 		// Separator
-		lines.push(
-			truncateToWidth(borderFg(`│${"─".repeat(boxWidth - 2)}│`), width),
-		);
+		lines.push(borderFg(`│${"─".repeat(boxWidth - 2)}│`));
 
 		// Actions
 		const actionLine =
@@ -150,16 +138,11 @@ class CommitReview implements Component {
 		);
 		const actionPad = Math.max(0, boxWidth - actionVisible - 2);
 		lines.push(
-			truncateToWidth(
-				`${borderFg("│")}${actionLine}${" ".repeat(actionPad)}${borderFg("│")}`,
-				width,
-			),
+			`${borderFg("│")}${actionLine}${" ".repeat(actionPad)}${borderFg("│")}`,
 		);
 
 		// Bottom border
-		lines.push(
-			truncateToWidth(borderFg(`╰${"─".repeat(boxWidth - 2)}╯`), width),
-		);
+		lines.push(borderFg(`╰${"─".repeat(boxWidth - 2)}╯`));
 
 		this.cachedLines = lines;
 		this.cachedWidth = width;
