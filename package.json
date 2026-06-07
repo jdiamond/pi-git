@@ -1,5 +1,5 @@
 {
-	"name": "pi-git",
+	"name": "@jdiamond/pi-git",
 	"version": "0.1.0",
 	"description": "Review-gated git/GitHub tools for pi. Every action that creates or publishes content shows a review UI before executing.",
 	"keywords": [
