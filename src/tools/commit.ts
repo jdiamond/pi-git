@@ -13,7 +13,7 @@ import {
 } from "../git.ts";
 import { reviewCommit } from "../review.ts";
 
-function formatFilesSection(
+export function formatFilesSection(
 	files: string[],
 	label: string,
 ): string | undefined {
@@ -21,15 +21,14 @@ function formatFilesSection(
 	return `${label}:\n  ${files.join("\n  ")}`;
 }
 
-function buildCommitSections(
+export function buildCommitSections(
 	files: string[] | undefined,
-	cwd: string,
+	stagedFiles: string[],
 ): string[] {
 	const sections: string[] = [];
 
 	if (files?.length) {
-		const existingFiles = getStagedFiles(cwd).filter((f) => !files.includes(f));
-		const es = formatFilesSection(existingFiles, "Already staged");
+		const es = formatFilesSection(stagedFiles, "Already staged");
 		if (es) sections.push(es);
 
 		const s = formatFilesSection(files, "Files to stage");
@@ -77,8 +76,10 @@ export function register(pi: {
 				);
 			}
 
-			const result = await reviewCommit(ctx, cwd, params.message, (cwd) =>
-				buildCommitSections(files, cwd),
+			const stagedFiles = files ? getStagedFiles(cwd) : [];
+
+			const result = await reviewCommit(ctx, cwd, params.message, () =>
+				buildCommitSections(files, stagedFiles),
 			);
 
 			if (!result.approved) {

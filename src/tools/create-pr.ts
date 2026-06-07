@@ -16,7 +16,7 @@ export interface CreatePrParams {
 	reviewers?: string[] | undefined;
 }
 
-function buildPrArgs(params: CreatePrParams): string[] {
+export function buildPrArgs(params: CreatePrParams): string[] {
 	const args = ["pr", "create", "--title", params.title];
 
 	if (params.body) {
@@ -44,7 +44,7 @@ function buildPrArgs(params: CreatePrParams): string[] {
 	return args;
 }
 
-function formatPrSummary(params: CreatePrParams): string {
+export function formatPrSummary(params: CreatePrParams): string {
 	const headers: string[] = [];
 	headers.push(`Title: ${params.title}`);
 
@@ -74,7 +74,7 @@ function formatPrSummary(params: CreatePrParams): string {
 	return parts.join("\n");
 }
 
-function parsePrHeaderLine(
+export function parsePrHeaderLine(
 	line: string,
 	params: Partial<CreatePrParams>,
 ): void {
@@ -92,7 +92,7 @@ function parsePrHeaderLine(
 	}
 }
 
-function parsePrHeaders(lines: string[]): {
+export function parsePrHeaders(lines: string[]): {
 	headerEnd: number;
 	params: Partial<CreatePrParams>;
 } {
@@ -115,7 +115,10 @@ function parsePrHeaders(lines: string[]): {
 	return { headerEnd, params };
 }
 
-function parsePrEditedText(current: CreatePrParams, edited: string): void {
+export function parsePrEditedText(
+	current: CreatePrParams,
+	edited: string,
+): void {
 	const lines = edited.split("\n");
 	const { headerEnd, params } = parsePrHeaders(lines);
 
