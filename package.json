@@ -1,0 +1,54 @@
+{
+	"name": "pi-git",
+	"version": "0.1.0",
+	"description": "Review-gated git/GitHub tools for pi. Every action that creates or publishes content shows a review UI before executing.",
+	"keywords": [
+		"pi-package",
+		"git",
+		"github",
+		"review",
+		"commit"
+	],
+	"author": "Jason Diamond <jason@diamond.name>",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jdiamond/pi-git.git"
+	},
+	"homepage": "https://github.com/jdiamond/pi-git",
+	"bugs": {
+		"url": "https://github.com/jdiamond/pi-git/issues"
+	},
+	"files": [
+		"src",
+		"README.md"
+	],
+	"type": "module",
+	"scripts": {
+		"test": "node --test test/**/*.ts",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check",
+		"lint:fix": "biome check --write",
+		"format": "biome check --write",
+		"format:check": "biome check",
+		"check": "npm run typecheck && npm run lint && npm run format:check",
+		"verify": "npm run check && npm test"
+	},
+	"pi": {
+		"extensions": [
+			"./src/index.ts"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.11",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*",
+		"@types/node": "^25",
+		"typebox": "1.1.28",
+		"typescript": "^5.8"
+	}
+}
