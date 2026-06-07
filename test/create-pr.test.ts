@@ -105,12 +105,13 @@ describe("formatPrSummary", () => {
 		assert.ok(result.includes("Dry run: yes"));
 	});
 
-	it("includes reviewers", () => {
+	it("includes reviewers on separate lines", () => {
 		const result = formatPrSummary({
 			title: "Fix",
 			reviewers: ["user1", "user2"],
 		});
-		assert.ok(result.includes("Reviewers: user1, user2"));
+		assert.ok(result.includes("Reviewer: user1"));
+		assert.ok(result.includes("Reviewer: user2"));
 	});
 
 	it("places body after blank line (HTTP style)", () => {
@@ -174,22 +175,26 @@ describe("parsePrHeaderLine", () => {
 		assert.equal(params.dryRun, true);
 	});
 
-	it("parses reviewers", () => {
+	it("parses a single reviewer", () => {
 		const params: Partial<CreatePrParams> = {};
-		parsePrHeaderLine(
-			"Reviewers: copilot-pull-request-reviewer[bot], user1",
-			params,
-		);
+		parsePrHeaderLine("Reviewer: user1", params);
+		assert.deepEqual(params.reviewers, ["user1"]);
+	});
+
+	it("accumulates multiple reviewer lines", () => {
+		const params: Partial<CreatePrParams> = {};
+		parsePrHeaderLine("Reviewer: copilot-pull-request-reviewer[bot]", params);
+		parsePrHeaderLine("Reviewer: user1", params);
 		assert.deepEqual(params.reviewers, [
 			"copilot-pull-request-reviewer[bot]",
 			"user1",
 		]);
 	});
 
-	it("parses empty reviewers as empty array", () => {
+	it("skips empty reviewer value", () => {
 		const params: Partial<CreatePrParams> = {};
-		parsePrHeaderLine("Reviewers: ", params);
-		assert.deepEqual(params.reviewers, []);
+		parsePrHeaderLine("Reviewer: ", params);
+		assert.equal(params.reviewers, undefined);
 	});
 });
 

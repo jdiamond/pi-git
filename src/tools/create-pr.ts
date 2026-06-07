@@ -61,7 +61,9 @@ export function formatPrSummary(params: CreatePrParams): string {
 	}
 
 	if (params.reviewers?.length) {
-		headers.push(`Reviewers: ${params.reviewers.join(", ")}`);
+		for (const reviewer of params.reviewers) {
+			headers.push(`Reviewer: ${reviewer}`);
+		}
 	}
 
 	const parts: string[] = [headers.join("\n")];
@@ -86,9 +88,14 @@ export function parsePrHeaderLine(
 		params.draft = line.slice("Draft: ".length) === "yes";
 	} else if (line.startsWith("Dry run: ")) {
 		params.dryRun = line.slice("Dry run: ".length) === "yes";
-	} else if (line.startsWith("Reviewers: ")) {
-		const val = line.slice("Reviewers: ".length);
-		params.reviewers = val ? val.split(", ") : [];
+	} else if (line.startsWith("Reviewer: ")) {
+		const val = line.slice("Reviewer: ".length);
+		if (val) {
+			if (!params.reviewers) {
+				params.reviewers = [];
+			}
+			params.reviewers.push(val);
+		}
 	}
 }
 
