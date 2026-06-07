@@ -10,6 +10,7 @@ Every action that publishes content shows a review overlay before executing: app
 |------|-------------|
 | `git_commit` | Stage files and commit with a review step |
 | `git_create_pr` | Create a pull request with a review step |
+| `git_amend` | Amend the most recent commit with a review step |
 
 All tools use a `git_` prefix to avoid conflicts.
 
@@ -48,3 +49,16 @@ git_create_pr(
 ```
 
 Same review flow — approve, edit, or cancel before the PR is created.
+
+### Amend
+
+The agent amends the most recent commit (message and/or files):
+
+```
+git_amend(
+  message: "Better commit message",
+  files: ["src/forgot-to-add.ts"]
+)
+```
+
+The review overlay shows the current commit message and files, plus any new message and files to stage.
