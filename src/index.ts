@@ -22,6 +22,18 @@ function hasStagedChanges(cwd: string): boolean {
 	return result.status !== 0;
 }
 
+function stageFiles(cwd: string, files: string[]): void {
+	const result = spawnSync("git", ["add", "--", ...files], {
+		cwd,
+		stdio: "pipe",
+		encoding: "utf-8",
+	});
+	if (result.error) throw result.error;
+	if (result.status !== 0) {
+		throw new Error(result.stderr.trim() || "git add failed");
+	}
+}
+
 function runCommit(cwd: string, message: string): string {
 	const result = spawnSync("git", ["commit", "-m", message], {
 		cwd,
@@ -38,15 +50,18 @@ function runCommit(cwd: string, message: string): string {
 async function reviewCommit(
 	ctx: ExtensionContext,
 	initialMessage: string,
+	files?: string[],
 ): Promise<{ message: string; approved: boolean }> {
 	let message = initialMessage;
+	const filesSection = files?.length
+		? `\n\nFiles:\n  ${files.join("\n  ")}`
+		: "";
 
 	for (;;) {
-		const choice = await ctx.ui.select(`📝 Commit:\n\n${message}`, [
-			"approve",
-			"edit",
-			"cancel",
-		]);
+		const choice = await ctx.ui.select(
+			`📝 Commit:\n\n${message}${filesSection}`,
+			["approve", "edit", "cancel"],
+		);
 
 		if (choice === "approve") return { message, approved: true };
 		if (choice === "cancel" || choice === undefined) {
@@ -67,9 +82,15 @@ export default function (pi: ExtensionAPI) {
 		name: "git_commit",
 		label: "Git Commit",
 		description:
-			"Create a git commit with the currently staged changes. Shows a review overlay showing the commit message — the user can approve, edit, or cancel before the commit executes.",
+			"Create a git commit. Optionally takes a list of files to stage; otherwise commits already-staged changes. Shows a review overlay where the user can approve, edit, or cancel before the commit executes.",
 		parameters: Type.Object({
 			message: Type.String({ description: "The commit message" }),
+			files: Type.Optional(
+				Type.Array(Type.String(), {
+					description:
+						"Files to stage and commit (if omitted, commits already-staged changes)",
+				}),
+			),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const cwd = resolve(ctx.cwd);
@@ -78,23 +99,29 @@ export default function (pi: ExtensionAPI) {
 				throw new Error("Not inside a git repository.");
 			}
 
-			if (!hasStagedChanges(cwd)) {
+			const files = params.files?.length ? params.files : undefined;
+
+			if (!files && !hasStagedChanges(cwd)) {
 				throw new Error(
-					"Nothing staged for commit. Use `git add ...` to stage files first.",
+					"Nothing staged for commit. Pass `files` to stage specific files, or stage changes first.",
 				);
 			}
 
-			const result = await reviewCommit(ctx, params.message);
+			const result = await reviewCommit(ctx, params.message, files);
 
 			if (!result.approved) {
 				throw new Error("Commit cancelled by user.");
+			}
+
+			if (files) {
+				stageFiles(cwd, files);
 			}
 
 			const output = runCommit(cwd, result.message);
 
 			return {
 				content: [{ type: "text" as const, text: output || "Commit created." }],
-				details: { message: result.message, output },
+				details: { message: result.message, output, files },
 			};
 		},
 	});
