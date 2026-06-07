@@ -91,7 +91,7 @@ class CommitReview implements Component {
 		const boxWidth = Math.min(width, 72);
 		const innerWidth = boxWidth - 4; // 2 padding + 2 borders
 		const title = " Commit Message ";
-		const titlePad = Math.max(0, boxWidth - title.length - 2);
+		const titlePad = Math.max(0, boxWidth - title.length - 3);
 
 		const lines: string[] = [];
 		lines.push(
