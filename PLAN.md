@@ -66,8 +66,24 @@ inline review step at the bottom of the TUI:
 
 ## Future Tools
 
-- `git_reply_to_comment(comment_id, body)` — review then reply to a PR comment
-- `git_resolve_thread(thread_id)` — mark a review thread as resolved
+### `git_reply_to_thread(threadId, body)`
+
+- Reply to an inline review thread (GraphQL mutation via `gh api graphql`)
+- The agent passes a thread node ID from a prior `git_pr_comments` call
+- Review step shows the body with two approve options:
+  **Approve & resolve** or **Approve** (reply only), plus Edit and Cancel
+  — the human picks, no second prompt, escape is always cancel
+
+### `git_resolve_thread(threadId)`
+
+- Resolve a review thread without replying (GraphQL mutation)
+- Simple confirm, no body to review
+- Standalone for cases where you just want to mark something resolved
+
+### `git_add_pr_comment(number, body)`
+
+- Add a top-level conversation comment on a PR via `gh pr comment`
+- Review step for the body, same flow as the other publishing tools
 
 ## Project Structure
 
