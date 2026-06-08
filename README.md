@@ -1,18 +1,22 @@
 # pi-git
 
-**Review-gated git/GitHub tools for [pi](https://github.com/mariozechner/pi-coding-agent)**
+**Tools for git and GitHub for [pi](https://pi.dev)**
 
-Every action that publishes content shows a review overlay before executing: approve, edit, or cancel. No accidental commits or PRs.
+Every action that publishes content shows a review step before executing: approve, edit, or cancel. No accidental commits or PRs.
 
-## Tools
+## Why
 
-| Tool | Description |
-|------|-------------|
-| `git_commit` | Stage files and commit with a review step |
-| `git_create_pr` | Create a pull request with a review step |
-| `git_amend` | Amend the most recent commit with a review step |
+When your agent needs to commit, create a PR, or read review comments, the natural path is a bash tool call. But that gets painful fast:
 
-All tools use a `git_` prefix to avoid conflicts.
+**Long messages are hard to read.** A commit message or PR body shoved into a bash command is unreadable — all on one line or with inline `\n` escapes. You end up squinting at the raw tool call in your terminal just to figure out what the agent is about to do.
+
+**Escaping is brittle.** The agent will get shell escaping wrong. Quotes, backticks, dollar signs — something breaks, the command fails, and the agent burns a turn retrying.
+
+**Review costs extra.** With [pi-guard](https://github.com/jdiamond/pi-guard), you can intercept and cancel a bash tool call before it runs. But that sends the agent back to the drawing board for another full turn. With pi-git, you edit the message inline right there in the review step — approve, edit, or cancel in one step. No extra round trip to the model.
+
+**Complex GitHub operations get wrapped.** When the agent wants to read PR review threads, it constructs a `gh api graphql` command with a multi-line query escaped for the shell. As a human, you have to parse that command to be sure it's safe before approving. pi-git encapsulates that in a focused `git_pr_comments` tool — no shell escaping to audit, no GraphQL to verify. You know by the tool name alone that it's a read-only operation.
+
+**The editor is right there.** pi's built-in editor component powers the edit step. Press ctrl+g to open the text in neovim (or whatever `$EDITOR` you've wired up), make your changes, save, and you're back in the review flow. No context switching.
 
 ## Install
 
@@ -22,43 +26,16 @@ All tools use a `git_` prefix to avoid conflicts.
 }
 ```
 
-## Usage
+## How it works
 
-### Commit
+Install the extension and your agent gets four new tools. When the agent decides to commit, amend, open a PR, or read comments, it calls one of these instead of reaching for bash:
 
-The agent stages files and commits in one call:
+- **`git_commit`** — stage files and commit, with a review step that lets you edit the message in an editor before it runs.
 
-```
-git_commit(message: "Fix: resolve race condition in pool shutdown", files: ["src/pool.ts"])
-```
+- **`git_amend`** — amend the last commit. Shows the current message and files, plus what's changing. Same review flow.
 
-A review overlay shows the commit message and lets you **[a]**pprove, **[e]**dit, or **[c]**ancel before the commit executes.
+- **`git_create_pr`** — create a pull request with optional reviewers, draft flag, and target branch. Review the title and body before it goes out.
 
-### Create PR
+- **`git_pr_comments`** — read all comments on a PR: conversation comments, inline review threads (with resolved/outdated status), and review summaries — including Copilot feedback. Auto-detects the repo, or pass `owner/name`.
 
-The agent creates a pull request with optional reviewers:
-
-```
-git_create_pr(
-  title: "Fix connection pool shutdown",
-  body: "The pool's close() could return before draining...",
-  base: "main",
-  draft: true,
-  reviewers: ["copilot-pull-request-reviewer[bot]"]
-)
-```
-
-Same review flow — approve, edit, or cancel before the PR is created.
-
-### Amend
-
-The agent amends the most recent commit (message and/or files):
-
-```
-git_amend(
-  message: "Better commit message",
-  files: ["src/forgot-to-add.ts"]
-)
-```
-
-The review overlay shows the current commit message and files, plus any new message and files to stage.
+Every tool that creates or publishes content uses the same review step: you see exactly what will happen, then approve, edit, or cancel.

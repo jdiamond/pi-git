@@ -7,11 +7,11 @@ a chance to approve, edit, or cancel.
 ## Naming
 
 All tools use a `git_` prefix to avoid conflicts with other extensions:
-`git_commit`, `git_create_pr`, `git_reply_to_comment`, etc.
+`git_commit`, `git_create_pr`, `git_pr_comments`, etc.
 
-## Current Scope (v0.1.0)
+## Current Scope
 
-Two tools:
+Four tools:
 
 ### `git_commit(message, files?)`
 
@@ -19,46 +19,55 @@ Two tools:
 - Optionally stages files inline via `files` parameter
 - If nothing is staged and no files provided, returns an error
 
-### Review UX
+### `git_amend(message?, files?)`
 
-When the agent calls `git_commit`, the extension shows a custom TUI overlay:
+- Amends the most recent commit
+- Optionally provide a new message and/or files to stage
+- Shows current commit info and pending changes in the review step
 
-```
-┌─ Commit Message ──────────────────────────────────────────────┐
-│                                                                │
-│  Fix: resolve race condition in connection pool shutdown       │
-│                                                                │
-│  The pool's close() method could return before all in-flight   │
-│  connections were drained, causing tests to fail with          │
-│  ECONNRESET. This adds an explicit drain step before closing   │
-│  the server.                                                   │
-│                                                                │
-│────────────────────────────────────────────────────────────────│
-│  [a] approve    [e] edit    [c] cancel                         │
-└────────────────────────────────────────────────────────────────┘
-```
-
-- **a** — execute the commit, return result to agent
-- **e** — open `ctx.ui.editor()` with the message text, then loop back to review
-- **c** / **esc** — cancel, return blocked to agent
-
-### Notes
-
-- Uses the built-in `ctx.ui.editor()` for editing (TUI editor, not $EDITOR)
-- $EDITOR integration can be explored later if the built-in editor isn't sufficient
-- No config files yet — hardcoded behavior for the PoC
-
-### `git_create_pr(title, body?, base?, draft?, reviewers?)`
+### `git_create_pr(title, body?, base?, draft?, dryRun?, reviewers?)`
 
 - Creates a PR via `gh pr create`
 - Supports reviewers (including copilot bot), draft flag, target branch
+- `dryRun` prints details without creating the PR
+
+### `git_pr_comments(number, repo?)`
+
+- Reads comments on a GitHub pull request
+- Returns conversation comments, inline review threads (with resolved/outdated
+  status), and review body summaries — including Copilot feedback
+- Uses the GitHub GraphQL API via `gh api graphql`
+- Auto-detects the repo from the current directory, or accepts `owner/name`
+
+## Review UX
+
+When the agent calls a tool that publishes content, the extension shows an
+inline review step at the bottom of the TUI:
+
+```
+📝 Commit Message:
+
+  Fix: resolve race condition in connection pool shutdown
+
+  The pool's close() method could return before all in-flight
+  connections were drained, causing tests to fail with
+  ECONNRESET. This adds an explicit drain step before closing
+  the server.
+
+  > Approve
+    Edit
+    Cancel
+```
+
+- **Approve** — execute the action, return result to agent
+- **Edit** — open `ctx.ui.editor()` with the text, then loop back to review
+  (ctrl+g opens the text in neovim for a full editing experience)
+- **Cancel** / **esc** — cancel, return blocked to agent
 
 ## Future Tools
 
-- `git_amend_commit(message)` — like `git_commit` but amends
-- `git_get_pr_comments(pr_number)` — fetch copilot + human comments
-- `git_reply_to_comment(comment_id, body)` — review then reply
-- `git_resolve_thread(thread_id)` — mark resolved (no review needed, just confirm)
+- `git_reply_to_comment(comment_id, body)` — review then reply to a PR comment
+- `git_resolve_thread(thread_id)` — mark a review thread as resolved
 
 ## Project Structure
 
@@ -72,7 +81,13 @@ pi-git/
 ├── tsconfig.json
 ├── src/
 │   ├── index.ts          # Extension entry point
-│   └── ...               # extracted modules as the codebase grows
+│   ├── git.ts            # Shared git helpers
+│   ├── review.ts         # Shared review helpers
+│   └── tools/
+│       ├── amend.ts
+│       ├── commit.ts
+│       ├── create-pr.ts
+│       └── read-pr-comments.ts
 ├── test/
 │   └── ...
 └── README.md
