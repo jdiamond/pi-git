@@ -312,11 +312,14 @@ export function formatTimeline(
 		entries.push({ type: "comment", date: c.createdAt, node: c });
 	}
 	for (const r of reviews) {
+		const reviewThreads = threadsByReview.get(r.url) ?? [];
+		// Skip empty pending reviews (e.g. auto-created by thread replies)
+		if (!r.body && reviewThreads.length === 0) continue;
 		entries.push({
 			type: "review",
 			date: r.createdAt,
 			node: r,
-			threads: threadsByReview.get(r.url) ?? [],
+			threads: reviewThreads,
 		});
 	}
 	entries.sort((a, b) => a.date.localeCompare(b.date));
