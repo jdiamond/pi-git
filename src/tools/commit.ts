@@ -76,7 +76,7 @@ export function register(pi: {
 				);
 			}
 
-			const stagedFiles = files ? getStagedFiles(cwd) : [];
+			const stagedFiles = files ? await getStagedFiles(cwd) : [];
 
 			const result = await reviewCommit(ctx, cwd, params.message, () =>
 				buildCommitSections(files, stagedFiles),
@@ -87,10 +87,10 @@ export function register(pi: {
 			}
 
 			if (files) {
-				stageFiles(cwd, files);
+				await stageFiles(cwd, files);
 			}
 
-			const output = runCommit(cwd, result.message);
+			const output = await runCommit(cwd, result.message);
 
 			return {
 				content: [{ type: "text" as const, text: output || "Commit created." }],

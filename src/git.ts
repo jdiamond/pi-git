@@ -1,68 +1,101 @@
-import { spawnSync } from "node:child_process";
+import { execFile } from "node:child_process";
 
-export function isGitRepo(cwd: string): boolean {
-	const result = spawnSync("git", ["rev-parse", "--git-dir"], {
-		cwd,
-		stdio: "ignore",
+function exec(
+	command: string,
+	args: string[],
+	cwd: string,
+	encoding: BufferEncoding = "utf-8",
+): Promise<{ stdout: string; stderr: string }> {
+	return new Promise((resolve, reject) => {
+		execFile(
+			command,
+			args,
+			{ cwd, encoding, maxBuffer: 10 * 1024 * 1024 },
+			(error, stdout, stderr) => {
+				if (error) {
+					const msg =
+						typeof stderr === "string" && stderr.trim()
+							? stderr.trim()
+							: `${command} ${args[0]} failed`;
+					reject(new Error(msg));
+				} else {
+					resolve({
+						stdout: stdout as string,
+						stderr: stderr as string,
+					});
+				}
+			},
+		);
 	});
-	return result.status === 0;
 }
 
-export function hasStagedChanges(cwd: string): boolean {
-	const result = spawnSync("git", ["diff", "--cached", "--quiet"], {
-		cwd,
-		stdio: "ignore",
-	});
-	return result.status !== 0;
-}
-
-export function getStagedFiles(cwd: string): string[] {
-	const result = spawnSync("git", ["diff", "--cached", "--name-only"], {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git diff --cached failed");
-	}
-	return result.stdout.trim().split("\n").filter(Boolean);
-}
-
-export function stageFiles(cwd: string, files: string[]): void {
-	const result = spawnSync("git", ["add", "--", ...files], {
-		cwd,
-		stdio: "pipe",
-		encoding: "utf-8",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git add failed");
+export async function isGitRepo(cwd: string): Promise<boolean> {
+	try {
+		await exec("git", ["rev-parse", "--git-dir"], cwd);
+		return true;
+	} catch {
+		return false;
 	}
 }
 
-export function runCommit(cwd: string, message: string): string {
-	const result = spawnSync("git", ["commit", "-m", message], {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git commit failed");
+export async function hasStagedChanges(cwd: string): Promise<boolean> {
+	try {
+		await exec("git", ["diff", "--cached", "--quiet"], cwd);
+		return false;
+	} catch {
+		return true;
 	}
-	return result.stdout.trim();
 }
 
-export function runGh(args: string[], cwd: string): string {
-	const result = spawnSync("gh", args, {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || `gh ${args[0]} failed`);
+export async function getStagedFiles(cwd: string): Promise<string[]> {
+	try {
+		const { stdout } = await exec(
+			"git",
+			["diff", "--cached", "--name-only"],
+			cwd,
+		);
+		return stdout.trim().split("\n").filter(Boolean);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || "git diff --cached failed");
 	}
-	return result.stdout.trim();
+}
+
+export async function stageFiles(cwd: string, files: string[]): Promise<void> {
+	try {
+		await exec("git", ["add", "--", ...files], cwd);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || "git add failed");
+	}
+}
+
+export async function runCommit(cwd: string, message: string): Promise<string> {
+	try {
+		const { stdout } = await exec("git", ["commit", "-m", message], cwd);
+		return stdout.trim();
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || "git commit failed");
+	}
+}
+
+export async function runGit(args: string[], cwd: string): Promise<string> {
+	try {
+		const { stdout } = await exec("git", args, cwd);
+		return stdout.trim();
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || `git ${args[0]} failed`);
+	}
+}
+
+export async function runGh(args: string[], cwd: string): Promise<string> {
+	try {
+		const { stdout } = await exec("gh", args, cwd);
+		return stdout.trim();
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || `gh ${args[0]} failed`);
+	}
 }

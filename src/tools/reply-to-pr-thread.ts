@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { resolve } from "node:path";
 import type {
 	ExtensionContext,
@@ -21,28 +21,50 @@ mutation($threadId: ID!) {
   }
 }`;
 
-function runGraphql(
+function execGh(
+	args: string[],
+	cwd: string,
+): Promise<{ stdout: string; stderr: string }> {
+	return new Promise((resolve, reject) => {
+		execFile(
+			"gh",
+			args,
+			{ cwd, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 },
+			(error, stdout, stderr) => {
+				if (error) {
+					const msg =
+						typeof stderr === "string" && stderr.trim()
+							? stderr.trim()
+							: `gh ${args[0]} failed`;
+					reject(new Error(msg));
+				} else {
+					resolve({
+						stdout: stdout as string,
+						stderr: stderr as string,
+					});
+				}
+			},
+		);
+	});
+}
+
+async function runGraphql(
 	cwd: string,
 	query: string,
 	variables: Record<string, string>,
-): string {
+): Promise<string> {
 	const args = ["api", "graphql", "-f", `query=${query}`];
 	for (const [key, value] of Object.entries(variables)) {
 		args.push("-F", `${key}=${value}`);
 	}
 
-	const result = spawnSync("gh", args, {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "gh api graphql failed");
+	try {
+		const result = await execGh(args, cwd);
+		return result.stdout;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || "gh api graphql failed");
 	}
-
-	return result.stdout;
 }
 
 async function reviewReply(
@@ -85,7 +107,7 @@ async function executeReply(
 }> {
 	let replyOutput: string;
 	try {
-		replyOutput = runGraphql(cwd, REPLY_MUTATION, {
+		replyOutput = await runGraphql(cwd, REPLY_MUTATION, {
 			threadId,
 			body: result.body,
 		});
@@ -97,7 +119,7 @@ async function executeReply(
 	let resolveOutput: string | undefined;
 	if (result.resolve) {
 		try {
-			resolveOutput = runGraphql(cwd, RESOLVE_MUTATION, { threadId });
+			resolveOutput = await runGraphql(cwd, RESOLVE_MUTATION, { threadId });
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			throw new Error(`Reply posted but failed to resolve thread: ${msg}`);
@@ -153,7 +175,7 @@ export function register(pi: {
 		) {
 			const cwd = resolve(ctx.cwd);
 
-			if (!isGitRepo(cwd)) {
+			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
 			}
 

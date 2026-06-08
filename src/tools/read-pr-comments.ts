@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { resolve } from "node:path";
 import type {
 	ExtensionContext,
@@ -12,23 +12,51 @@ interface RepoInfo {
 	repo: string;
 }
 
-function detectRepo(cwd: string): RepoInfo {
-	const result = spawnSync("gh", ["repo", "view", "--json", "nameWithOwner"], {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
+function execGh(
+	args: string[],
+	cwd: string,
+): Promise<{ stdout: string; stderr: string }> {
+	return new Promise((resolve, reject) => {
+		execFile(
+			"gh",
+			args,
+			{ cwd, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 },
+			(error, stdout, stderr) => {
+				if (error) {
+					const msg =
+						typeof stderr === "string" && stderr.trim()
+							? stderr.trim()
+							: `gh ${args[0]} failed`;
+					reject(new Error(msg));
+				} else {
+					resolve({
+						stdout: stdout as string,
+						stderr: stderr as string,
+					});
+				}
+			},
+		);
 	});
+}
 
-	if (result.status !== 0) {
+async function detectRepo(cwd: string): Promise<RepoInfo> {
+	let stdout: string;
+	try {
+		const result = await execGh(
+			["repo", "view", "--json", "nameWithOwner"],
+			cwd,
+		);
+		stdout = result.stdout;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(
-			"Could not detect GitHub repository. " +
-				"Pass `repo` or run inside a git repo with a GitHub remote.",
+			`Could not detect GitHub repository. ${msg || "Pass `repo` or run inside a git repo with a GitHub remote."}`,
 		);
 	}
 
 	let data: { nameWithOwner: string };
 	try {
-		data = JSON.parse(result.stdout);
+		data = JSON.parse(stdout);
 	} catch {
 		throw new Error("Failed to parse repo info from gh.");
 	}
@@ -51,7 +79,10 @@ function parseRepo(repoStr: string): RepoInfo {
 	return { owner, repo };
 }
 
-function getRepo(cwd: string, repoOverride?: string): RepoInfo {
+function getRepo(
+	cwd: string,
+	repoOverride?: string,
+): RepoInfo | Promise<RepoInfo> {
 	if (repoOverride) {
 		return parseRepo(repoOverride);
 	}
@@ -159,12 +190,12 @@ export interface QueryResult {
 	};
 }
 
-function runGraphql(
+async function runGraphql(
 	cwd: string,
 	owner: string,
 	repo: string,
 	number: number,
-): string {
+): Promise<string> {
 	const args = [
 		"api",
 		"graphql",
@@ -178,18 +209,13 @@ function runGraphql(
 		`number=${number}`,
 	];
 
-	const result = spawnSync("gh", args, {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "gh api graphql failed");
+	try {
+		const result = await execGh(args, cwd);
+		return result.stdout;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		throw new Error(msg || "gh api graphql failed");
 	}
-
-	return result.stdout;
 }
 
 function formatDate(iso: string): string {
@@ -409,15 +435,15 @@ export function register(pi: {
 		) {
 			const cwd = resolve(ctx.cwd);
 
-			if (!isGitRepo(cwd)) {
+			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
 			}
 
-			const { owner, repo } = getRepo(cwd, params.repo);
+			const { owner, repo } = await getRepo(cwd, params.repo);
 
 			let raw: string;
 			try {
-				raw = runGraphql(cwd, owner, repo, params.number);
+				raw = await runGraphql(cwd, owner, repo, params.number);
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
 				if (msg.includes("Could not resolve to a PullRequest")) {

@@ -1,40 +1,21 @@
-import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { getStagedFiles, isGitRepo, stageFiles } from "../git.ts";
+import { getStagedFiles, isGitRepo, runGit, stageFiles } from "../git.ts";
 
-function getLastCommitMessage(cwd: string): string {
-	const result = spawnSync("git", ["log", "-1", "--format=%B"], {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git log failed");
-	}
-	return result.stdout.trim();
+async function getLastCommitMessage(cwd: string): Promise<string> {
+	return runGit(["log", "-1", "--format=%B"], cwd);
 }
 
-function getLastCommitFiles(cwd: string): string[] {
-	const result = spawnSync(
-		"git",
+async function getLastCommitFiles(cwd: string): Promise<string[]> {
+	const stdout = await runGit(
 		["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
-		{
-			cwd,
-			encoding: "utf-8",
-			stdio: "pipe",
-		},
+		cwd,
 	);
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git diff-tree failed");
-	}
-	return result.stdout.trim().split("\n").filter(Boolean);
+	return stdout.split("\n").filter(Boolean);
 }
 
 function formatFilesSection(
@@ -45,21 +26,12 @@ function formatFilesSection(
 	return `${label}:\n  ${files.join("\n  ")}`;
 }
 
-function runAmend(cwd: string, message: string): string {
+async function runAmend(cwd: string, message: string): Promise<string> {
 	const args = message
 		? ["commit", "--amend", "-m", message]
 		: ["commit", "--amend", "--no-edit"];
 
-	const result = spawnSync("git", args, {
-		cwd,
-		encoding: "utf-8",
-		stdio: "pipe",
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(result.stderr.trim() || "git commit --amend failed");
-	}
-	return result.stdout.trim();
+	return runGit(args, cwd);
 }
 
 interface AmendReviewState {
@@ -152,7 +124,7 @@ export function register(pi: {
 		) {
 			const cwd = resolve(ctx.cwd);
 
-			if (!isGitRepo(cwd)) {
+			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
 			}
 
@@ -160,20 +132,20 @@ export function register(pi: {
 
 			const state: AmendReviewState = {
 				cwd,
-				lastMessage: getLastCommitMessage(cwd),
-				commitFiles: getLastCommitFiles(cwd),
+				lastMessage: await getLastCommitMessage(cwd),
+				commitFiles: await getLastCommitFiles(cwd),
 				files,
-				stagedFiles: files ? getStagedFiles(cwd) : [],
-				amendMessage: params.message ?? getLastCommitMessage(cwd),
+				stagedFiles: files ? await getStagedFiles(cwd) : [],
+				amendMessage: params.message ?? (await getLastCommitMessage(cwd)),
 			};
 
 			await reviewAmend(ctx, state);
 
 			if (state.files) {
-				stageFiles(cwd, state.files);
+				await stageFiles(cwd, state.files);
 			}
 
-			const output = runAmend(cwd, state.amendMessage);
+			const output = await runAmend(cwd, state.amendMessage);
 
 			return {
 				content: [

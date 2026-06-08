@@ -218,7 +218,7 @@ export function register(pi: {
 		) {
 			const cwd = resolve(ctx.cwd);
 
-			if (!isGitRepo(cwd)) {
+			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
 			}
 
@@ -238,7 +238,7 @@ export function register(pi: {
 			}
 
 			const args = buildPrArgs(result.params);
-			const output = runGh(args, cwd);
+			const output = await runGh(args, cwd);
 
 			return {
 				content: [
