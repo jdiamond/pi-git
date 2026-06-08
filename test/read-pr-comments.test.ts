@@ -1,12 +1,12 @@
-import { describe, it } from "node:test";
 import { resolve } from "node:path";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-	formatOutput,
 	type CommentNode,
-	type ThreadNode,
-	type ReviewNode,
+	formatOutput,
 	type QueryResult,
+	type ReviewNode,
+	type ThreadNode,
 } from "../src/tools/read-pr-comments.ts";
 
 const dir = fileURLToPath(new URL(".", import.meta.url));
@@ -192,7 +192,7 @@ describe("PR comments formatting", () => {
 		};
 
 		const output = formatOutput(data, "example", "repo", 42);
-	t.assert.fileSnapshot(
+		t.assert.fileSnapshot(
 			output,
 			resolve(dir, "__snapshots__/read-pr-comments-output.md"),
 			{

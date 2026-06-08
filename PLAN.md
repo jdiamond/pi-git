@@ -11,8 +11,6 @@ All tools use a `git_` prefix to avoid conflicts with other extensions:
 
 ## Current Scope
 
-Four tools:
-
 ### `git_commit(message, files?)`
 
 - Commits with `git commit -m`
@@ -38,6 +36,14 @@ Four tools:
   status), and review body summaries — including Copilot feedback
 - Uses the GitHub GraphQL API via `gh api graphql`
 - Auto-detects the repo from the current directory, or accepts `owner/name`
+
+### `git_reply_to_pr_thread(threadId, body)`
+
+- Reply to an inline review thread (GraphQL mutation via `gh api graphql`)
+- The agent passes a thread node ID from a prior `git_pr_comments` call
+- Review step shows the body with two approve options:
+  **Approve & resolve** or **Approve** (reply only), plus Edit and Cancel
+  — the human picks, no second prompt, escape is always cancel
 
 ## Review UX
 
@@ -66,15 +72,7 @@ inline review step at the bottom of the TUI:
 
 ## Future Tools
 
-### `git_reply_to_thread(threadId, body)`
-
-- Reply to an inline review thread (GraphQL mutation via `gh api graphql`)
-- The agent passes a thread node ID from a prior `git_pr_comments` call
-- Review step shows the body with two approve options:
-  **Approve & resolve** or **Approve** (reply only), plus Edit and Cancel
-  — the human picks, no second prompt, escape is always cancel
-
-### `git_resolve_thread(threadId)`
+### `git_resolve_pr_thread(threadId)`
 
 - Resolve a review thread without replying (GraphQL mutation)
 - Simple confirm, no body to review
@@ -103,7 +101,8 @@ pi-git/
 │       ├── amend.ts
 │       ├── commit.ts
 │       ├── create-pr.ts
-│       └── read-pr-comments.ts
+│       ├── read-pr-comments.ts
+│       └── reply-to-pr-thread.ts
 ├── test/
 │   └── ...
 └── README.md

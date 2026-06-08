@@ -28,7 +28,7 @@ When your agent needs to commit, create a PR, or read review comments, the natur
 
 ## How it works
 
-Install the extension and your agent gets four new tools. When the agent decides to commit, amend, open a PR, or read comments, it calls one of these instead of reaching for bash:
+Install the extension and your agent gets a set of tools for common git and GitHub operations:
 
 - **`git_commit`** — stage files and commit, with a review step that lets you edit the message in an editor before it runs.
 
@@ -37,5 +37,7 @@ Install the extension and your agent gets four new tools. When the agent decides
 - **`git_create_pr`** — create a pull request with optional reviewers, draft flag, and target branch. Review the title and body before it goes out.
 
 - **`git_pr_comments`** — read all comments on a PR: conversation comments, inline review threads (with resolved/outdated status), and review summaries — including Copilot feedback. Auto-detects the repo, or pass `owner/name`.
+
+- **`git_reply_to_pr_thread`** — reply to an inline review thread. The review step lets you approve the reply body, with an "Approve & resolve" option that posts the reply and resolves the thread in one go. Thread IDs come from `git_pr_comments`.
 
 Every tool that creates or publishes content uses the same review step: you see exactly what will happen, then approve, edit, or cancel.
