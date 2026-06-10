@@ -41,3 +41,5 @@ Install the extension and your agent gets a set of tools for common git and GitH
 - **`git_reply_to_pr_thread`** — reply to an inline review thread. The review step lets you approve the reply body, with an "Approve & resolve" option that posts the reply and resolves the thread in one go. Thread IDs come from `git_pr_comments`.
 
 Every tool that creates or publishes content uses the same review step: you see exactly what will happen, then approve, edit, or cancel.
+
+All tools accept an optional `workingDir` parameter. It defaults to pi's current working directory; relative paths are resolved from that directory. Use it when the agent is operating from one repository but needs to commit, create a PR, or inspect reviews in another.

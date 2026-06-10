@@ -1,4 +1,3 @@
-import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
@@ -12,6 +11,11 @@ import {
 	stageFiles,
 } from "../git.ts";
 import { reviewCommit } from "../review.ts";
+import {
+	resolveWorkingDir,
+	type WorkingDirParam,
+	workingDirParameter,
+} from "../working-dir.ts";
 
 export function formatFilesSection(
 	files: string[],
@@ -54,23 +58,24 @@ export function register(pi: {
 						"Files to stage and commit (if omitted, commits already-staged changes)",
 				}),
 			),
+			workingDir: workingDirParameter(),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { message: string; files?: string[] },
+			params: { message: string; files?: string[] } & WorkingDirParam,
 			_signal: AbortSignal,
 			_onUpdate: unknown,
 			ctx: ExtensionContext,
 		) {
-			const cwd = resolve(ctx.cwd);
+			const cwd = resolveWorkingDir(ctx.cwd, params.workingDir);
 
-			if (!isGitRepo(cwd)) {
+			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
 			}
 
 			const files = params.files?.length ? params.files : undefined;
 
-			if (!files && !hasStagedChanges(cwd)) {
+			if (!files && !(await hasStagedChanges(cwd))) {
 				throw new Error(
 					"Nothing staged for commit. Pass `files` to stage specific files, or stage changes first.",
 				);
@@ -94,7 +99,7 @@ export function register(pi: {
 
 			return {
 				content: [{ type: "text" as const, text: output || "Commit created." }],
-				details: { message: result.message, output, files },
+				details: { message: result.message, output, files, workingDir: cwd },
 			};
 		},
 	});

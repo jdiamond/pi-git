@@ -1,11 +1,15 @@
 import { execFile } from "node:child_process";
-import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo } from "../git.ts";
+import {
+	resolveWorkingDir,
+	type WorkingDirParam,
+	workingDirParameter,
+} from "../working-dir.ts";
 
 interface RepoInfo {
 	owner: string;
@@ -425,15 +429,16 @@ export function register(pi: {
 						'Repository in "owner/name" format. Auto-detected from the current directory if omitted.',
 				}),
 			),
+			workingDir: workingDirParameter(),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { number: number; repo?: string },
+			params: { number: number; repo?: string } & WorkingDirParam,
 			_signal: AbortSignal,
 			_onUpdate: unknown,
 			ctx: ExtensionContext,
 		) {
-			const cwd = resolve(ctx.cwd);
+			const cwd = resolveWorkingDir(ctx.cwd, params.workingDir);
 
 			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
@@ -478,6 +483,7 @@ export function register(pi: {
 					conversationCount: pr.comments.totalCount,
 					threadCount: pr.reviewThreads.totalCount,
 					reviewCount: pr.reviews.totalCount,
+					workingDir: cwd,
 					threads: pr.reviewThreads.nodes.map((t) => ({
 						id: t.id,
 						path: t.path,

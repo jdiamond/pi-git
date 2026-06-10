@@ -1,10 +1,14 @@
-import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { getStagedFiles, isGitRepo, runGit, stageFiles } from "../git.ts";
+import {
+	resolveWorkingDir,
+	type WorkingDirParam,
+	workingDirParameter,
+} from "../working-dir.ts";
 
 async function getLastCommitMessage(cwd: string): Promise<string> {
 	return runGit(["log", "-1", "--format=%B"], cwd);
@@ -114,15 +118,16 @@ export function register(pi: {
 						"Files to stage and amend into the commit (leave out to amend without new changes)",
 				}),
 			),
+			workingDir: workingDirParameter(),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { message?: string; files?: string[] },
+			params: { message?: string; files?: string[] } & WorkingDirParam,
 			_signal: AbortSignal,
 			_onUpdate: unknown,
 			ctx: ExtensionContext,
 		) {
-			const cwd = resolve(ctx.cwd);
+			const cwd = resolveWorkingDir(ctx.cwd, params.workingDir);
 
 			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
@@ -158,6 +163,7 @@ export function register(pi: {
 					message: state.amendMessage,
 					files: state.files,
 					output,
+					workingDir: cwd,
 				},
 			};
 		},

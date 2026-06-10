@@ -1,4 +1,3 @@
-import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
@@ -6,6 +5,11 @@ import type {
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
 import { createReviewLoop } from "../review.ts";
+import {
+	resolveWorkingDir,
+	type WorkingDirParam,
+	workingDirParameter,
+} from "../working-dir.ts";
 
 export interface CreatePrParams {
 	title: string;
@@ -178,6 +182,7 @@ export function register(pi: {
 			body: Type.Optional(
 				Type.String({ description: "The PR body / description" }),
 			),
+			workingDir: workingDirParameter(),
 			base: Type.Optional(
 				Type.String({
 					description:
@@ -211,12 +216,12 @@ export function register(pi: {
 				draft?: boolean;
 				dryRun?: boolean;
 				reviewers?: string[];
-			},
+			} & WorkingDirParam,
 			_signal: AbortSignal,
 			_onUpdate: unknown,
 			ctx: ExtensionContext,
 		) {
-			const cwd = resolve(ctx.cwd);
+			const cwd = resolveWorkingDir(ctx.cwd, params.workingDir);
 
 			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
@@ -244,7 +249,7 @@ export function register(pi: {
 				content: [
 					{ type: "text" as const, text: output || "Pull request created." },
 				],
-				details: { ...result.params, output },
+				details: { ...result.params, output, workingDir: cwd },
 			};
 		},
 	});

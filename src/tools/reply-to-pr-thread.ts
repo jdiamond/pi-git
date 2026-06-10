@@ -1,11 +1,15 @@
 import { execFile } from "node:child_process";
-import { resolve } from "node:path";
 import type {
 	ExtensionContext,
 	ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo } from "../git.ts";
+import {
+	resolveWorkingDir,
+	type WorkingDirParam,
+	workingDirParameter,
+} from "../working-dir.ts";
 
 const REPLY_MUTATION = `\
 mutation($threadId: ID!, $body: String!) {
@@ -145,6 +149,7 @@ async function executeReply(
 			body: result.body,
 			resolved: result.resolve,
 			replyUrl: replyData.url,
+			workingDir: cwd,
 		},
 	};
 }
@@ -165,15 +170,16 @@ export function register(pi: {
 			body: Type.String({
 				description: "The reply body text.",
 			}),
+			workingDir: workingDirParameter(),
 		}),
 		async execute(
 			_toolCallId: string,
-			params: { threadId: string; body: string },
+			params: { threadId: string; body: string } & WorkingDirParam,
 			_signal: AbortSignal,
 			_onUpdate: unknown,
 			ctx: ExtensionContext,
 		) {
-			const cwd = resolve(ctx.cwd);
+			const cwd = resolveWorkingDir(ctx.cwd, params.workingDir);
 
 			if (!(await isGitRepo(cwd))) {
 				throw new Error("Not inside a git repository.");
