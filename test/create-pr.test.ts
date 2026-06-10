@@ -69,7 +69,7 @@ describe("buildPrArgs", () => {
 			base: "main",
 			draft: true,
 			dryRun: true,
-			reviewers: ["copilot-pull-request-reviewer[bot]"],
+			reviewers: ["@copilot"],
 		});
 		assert.ok(args.includes("--title"));
 		assert.ok(args.includes("Full PR"));
@@ -80,7 +80,7 @@ describe("buildPrArgs", () => {
 		assert.ok(args.includes("--draft"));
 		assert.ok(args.includes("--dry-run"));
 		assert.ok(args.includes("--reviewer"));
-		assert.ok(args.includes("copilot-pull-request-reviewer[bot]"));
+		assert.ok(args.includes("@copilot"));
 	});
 });
 
@@ -183,12 +183,9 @@ describe("parsePrHeaderLine", () => {
 
 	it("accumulates multiple reviewer lines", () => {
 		const params: Partial<CreatePrParams> = {};
-		parsePrHeaderLine("Reviewer: copilot-pull-request-reviewer[bot]", params);
+		parsePrHeaderLine("Reviewer: @copilot", params);
 		parsePrHeaderLine("Reviewer: user1", params);
-		assert.deepEqual(params.reviewers, [
-			"copilot-pull-request-reviewer[bot]",
-			"user1",
-		]);
+		assert.deepEqual(params.reviewers, ["@copilot", "user1"]);
 	});
 
 	it("skips empty reviewer value", () => {
@@ -236,7 +233,7 @@ describe("parsePrEditedText (round-trip)", () => {
 			base: "main",
 			draft: true,
 			dryRun: true,
-			reviewers: ["copilot-pull-request-reviewer[bot]", "user1"],
+			reviewers: ["@copilot", "user1"],
 		};
 
 		const formatted = formatPrSummary(original);

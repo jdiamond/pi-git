@@ -198,7 +198,7 @@ export function register(pi: {
 			reviewers: Type.Optional(
 				Type.Array(Type.String(), {
 					description:
-						"Reviewers to request (handles like `monalisa`, `myorg/team-name`, or `copilot-pull-request-reviewer[bot]`)",
+						"Reviewers to request (handles like `monalisa`, `myorg/team-name`, or `@copilot`)",
 				}),
 			),
 		}),
