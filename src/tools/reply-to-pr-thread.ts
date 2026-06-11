@@ -80,13 +80,13 @@ async function reviewReply(
 	for (;;) {
 		const choice = await ctx.ui.select(
 			`📝 Reply to PR thread:\n\n${currentBody}`,
-			["Approve & resolve", "Approve", "Edit", "Cancel"],
+			["Accept & resolve", "Accept", "Edit", "Cancel"],
 		);
 
-		if (choice === "Approve & resolve") {
+		if (choice === "Accept & resolve") {
 			return { body: currentBody, approved: true, resolve: true };
 		}
-		if (choice === "Approve") {
+		if (choice === "Accept") {
 			return { body: currentBody, approved: true, resolve: false };
 		}
 		if (choice === "Cancel" || choice === undefined) {

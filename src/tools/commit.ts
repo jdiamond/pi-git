@@ -49,7 +49,7 @@ export function register(pi: {
 		name: "git_commit",
 		label: "Git Commit",
 		description:
-			"Create a git commit. Optionally takes a list of files to stage; otherwise commits already-staged changes. Shows a review overlay where the user can approve, edit, or cancel before the commit executes.",
+			"Create a git commit. Optionally takes a list of files to stage; otherwise commits already-staged changes. Shows a review overlay where the user can accept, edit, or cancel before the commit executes.",
 		parameters: Type.Object({
 			message: Type.String({ description: "The commit message" }),
 			files: Type.Optional(

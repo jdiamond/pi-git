@@ -104,7 +104,7 @@ export function register(pi: {
 		name: "git_amend",
 		label: "Git Amend",
 		description:
-			"Amend the most recent commit. Optionally provide a new message and/or files to stage. Shows a review overlay where the user can approve, edit, or cancel before the amend executes.",
+			"Amend the most recent commit. Optionally provide a new message and/or files to stage. Shows a review overlay where the user can accept, edit, or cancel before the amend executes.",
 		parameters: Type.Object({
 			message: Type.Optional(
 				Type.String({

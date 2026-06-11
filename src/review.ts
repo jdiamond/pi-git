@@ -14,12 +14,12 @@ export async function reviewCommit(
 
 	for (;;) {
 		const choice = await ctx.ui.select(`${header}${message}`, [
-			"Approve",
+			"Accept",
 			"Edit",
 			"Cancel",
 		]);
 
-		if (choice === "Approve") return { message, approved: true };
+		if (choice === "Accept") return { message, approved: true };
 		if (choice === "Cancel" || choice === undefined) {
 			return { message, approved: false };
 		}
@@ -56,12 +56,12 @@ export function createReviewLoop<Params>({
 		for (;;) {
 			const summary = format(current);
 			const choice = await ctx.ui.select(`${label(current)}${summary}`, [
-				"Approve",
+				"Accept",
 				"Edit",
 				"Cancel",
 			]);
 
-			if (choice === "Approve") return { params: current, approved: true };
+			if (choice === "Accept") return { params: current, approved: true };
 			if (choice === "Cancel" || choice === undefined) {
 				return { params: current, approved: false };
 			}

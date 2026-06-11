@@ -176,7 +176,7 @@ export function register(pi: {
 		name: "git_create_pr",
 		label: "Git Create PR",
 		description:
-			"Create a pull request on GitHub. Shows a review overlay where the user can approve, edit, or cancel before the PR is created.",
+			"Create a pull request on GitHub. Shows a review overlay where the user can accept, edit, or cancel before the PR is created.",
 		parameters: Type.Object({
 			title: Type.String({ description: "The PR title" }),
 			body: Type.Optional(
