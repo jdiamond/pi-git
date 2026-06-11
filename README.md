@@ -38,6 +38,8 @@ Install the extension and your agent gets a set of tools for common git and GitH
 
 - **`git_pr_comments`** — read all comments on a PR: conversation comments, inline review threads (with resolved/outdated status), and review summaries — including Copilot feedback. Auto-detects the repo, or pass `owner/name`.
 
+- **`git_add_pr_comment`** — add a top-level conversation comment to a pull request. Review the body before it's posted.
+
 - **`git_reply_to_pr_thread`** — reply to an inline review thread. The review step lets you approve the reply body, with an "Approve & resolve" option that posts the reply and resolves the thread in one go. Thread IDs come from `git_pr_comments`.
 
 Every tool that creates or publishes content uses the same review step: you see exactly what will happen, then approve, edit, or cancel.
