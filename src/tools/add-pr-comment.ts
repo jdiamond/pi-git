@@ -44,7 +44,7 @@ export function register(pi: {
 		name: "git_add_pr_comment",
 		label: "Add PR Comment",
 		description:
-			"Add a top-level conversation comment on a GitHub pull request. Shows a review overlay where the user can accept, edit, or cancel before the comment is posted.",
+			"Add a top-level conversation comment on a GitHub pull request. Shows a review prompt where the user can accept, edit, or cancel before the comment is posted.",
 		parameters: Type.Object({
 			number: Type.Number({
 				description: "The pull request number.",

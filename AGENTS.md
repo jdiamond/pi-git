@@ -2,7 +2,7 @@ pi-git is a pi extension that provides review-gated git/GitHub tools. Every acti
 
 **Tool naming:** All tools use a `git_` prefix: `git_commit`, `git_create_pr`, etc.
 
-**Review pattern:** Tools that create/publish show an inline review step where the user can approve, edit, or cancel before the action executes.
+**Review pattern:** Tools that create/publish show a review prompt where the user can approve, edit, or cancel before the action executes.
 
 **Testing:** `node --test test/<file>.ts` for a single test file, `npm test` for the full suite
 
