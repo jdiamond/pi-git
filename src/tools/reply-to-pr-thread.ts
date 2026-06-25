@@ -5,6 +5,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo } from "../git.ts";
+import { withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -185,7 +186,7 @@ export function register(pi: {
 				throw new Error("Not inside a git repository.");
 			}
 
-			const result = await reviewReply(ctx, params.body);
+			const result = await withReviewLock(() => reviewReply(ctx, params.body));
 
 			if (!result.approved) {
 				throw new Error("Reply cancelled by user.");

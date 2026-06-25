@@ -4,6 +4,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
+import { withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -17,10 +18,11 @@ async function reviewComment(
 	let currentBody = body;
 
 	for (;;) {
-		const choice = await ctx.ui.select(
-			`📝 Add PR Comment:\n\n${currentBody}`,
-			["Approve", "Edit", "Cancel"],
-		);
+		const choice = await ctx.ui.select(`📝 Add PR Comment:\n\n${currentBody}`, [
+			"Approve",
+			"Edit",
+			"Cancel",
+		]);
 
 		if (choice === "Approve") {
 			return { body: currentBody, approved: true };
@@ -67,7 +69,9 @@ export function register(pi: {
 				throw new Error("Not inside a git repository.");
 			}
 
-			const result = await reviewComment(ctx, params.body);
+			const result = await withReviewLock(() =>
+				reviewComment(ctx, params.body),
+			);
 
 			if (!result.approved) {
 				throw new Error("Comment cancelled by user.");
@@ -81,7 +85,9 @@ export function register(pi: {
 				const url = output || "";
 
 				return {
-					content: [{ type: "text" as const, text: `Comment posted.\n\n${url}`.trim() }],
+					content: [
+						{ type: "text" as const, text: `Comment posted.\n\n${url}`.trim() },
+					],
 					details: {
 						number: params.number,
 						body: result.body,

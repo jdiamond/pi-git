@@ -1,5 +1,24 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
+let reviewQueue: Promise<void> = Promise.resolve();
+
+export async function withReviewLock<T>(fn: () => Promise<T>): Promise<T> {
+	let release = (): void => {};
+	const next = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const previous = reviewQueue;
+	reviewQueue = previous.catch(() => undefined).then(() => next);
+
+	await previous.catch(() => undefined);
+
+	try {
+		return await fn();
+	} finally {
+		release();
+	}
+}
+
 export async function reviewCommit(
 	ctx: ExtensionContext,
 	cwd: string,

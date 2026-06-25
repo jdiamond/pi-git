@@ -10,7 +10,7 @@ import {
 	runCommit,
 	stageFiles,
 } from "../git.ts";
-import { reviewCommit } from "../review.ts";
+import { reviewCommit, withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -83,8 +83,10 @@ export function register(pi: {
 
 			const stagedFiles = files ? await getStagedFiles(cwd) : [];
 
-			const result = await reviewCommit(ctx, cwd, params.message, () =>
-				buildCommitSections(files, stagedFiles),
+			const result = await withReviewLock(() =>
+				reviewCommit(ctx, cwd, params.message, () =>
+					buildCommitSections(files, stagedFiles),
+				),
 			);
 
 			if (!result.approved) {

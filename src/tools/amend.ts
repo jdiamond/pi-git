@@ -4,6 +4,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { getStagedFiles, isGitRepo, runGit, stageFiles } from "../git.ts";
+import { withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -144,7 +145,7 @@ export function register(pi: {
 				amendMessage: params.message ?? (await getLastCommitMessage(cwd)),
 			};
 
-			await reviewAmend(ctx, state);
+			await withReviewLock(() => reviewAmend(ctx, state));
 
 			if (state.files) {
 				await stageFiles(cwd, state.files);

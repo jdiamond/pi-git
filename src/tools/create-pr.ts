@@ -4,7 +4,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
-import { createReviewLoop } from "../review.ts";
+import { createReviewLoop, withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -236,7 +236,7 @@ export function register(pi: {
 				reviewers: params.reviewers?.length ? params.reviewers : undefined,
 			};
 
-			const result = await reviewPr(ctx, prParams);
+			const result = await withReviewLock(() => reviewPr(ctx, prParams));
 
 			if (!result.approved) {
 				throw new Error("PR creation cancelled by user.");
