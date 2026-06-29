@@ -28,20 +28,30 @@ When your agent needs to commit, create a PR, or read review comments, the natur
 
 ## How it works
 
-Install the extension and your agent gets a set of tools for common git and GitHub operations:
+Install the extension and your agent gets a set of tools for common git and GitHub operations.
 
-- **`git_commit`** — stage files and commit, with a review step that lets you edit the message in an editor before it runs.
+### Read-only tools
 
-- **`git_amend`** — amend the last commit. Shows the current message and files, plus what's changing. Same review flow.
+These tools let you give an agent controlled access to git without granting the `bash` tool. Use them to build subagents that can inspect code, review history, and read PR feedback — but can't modify anything.
+
+- **`git_diff`** — show changes (unstaged, staged, or between commits/branches).
+- **`git_log`** — commit history with filters for author, path, date range, and output format.
+- **`git_show`** — full diff and metadata for a specific commit.
+- **`git_status`** — working tree status: staged, unstaged, and untracked files.
+- **`git_pr_comments`** — read all comments on a PR: conversation comments, inline review threads (with resolved/outdated status), and review summaries — including Copilot feedback. Auto-detects the repo, or pass `owner/name`.
+
+### Write tools
+
+Every tool that creates or publishes content shows a review step before executing: accept, edit, or cancel.
+
+- **`git_commit`** — stage files and commit. Review the message before it runs.
+
+- **`git_amend`** — amend the last commit. Shows the current message and files, plus what's changing.
 
 - **`git_create_pr`** — create a pull request with optional reviewers, draft flag, and target branch. Review the title and body before it goes out.
-
-- **`git_pr_comments`** — read all comments on a PR: conversation comments, inline review threads (with resolved/outdated status), and review summaries — including Copilot feedback. Auto-detects the repo, or pass `owner/name`.
 
 - **`git_add_pr_comment`** — add a top-level conversation comment to a pull request. Review the body before it's posted.
 
 - **`git_reply_to_pr_thread`** — reply to an inline review thread. The review step lets you accept the reply body, with an "Accept & resolve" option that posts the reply and resolves the thread in one go. Thread IDs come from `git_pr_comments`.
-
-Every tool that creates or publishes content uses the same review step: you see exactly what will happen, then accept, edit, or cancel.
 
 All tools accept an optional `workingDir` parameter. It defaults to pi's current working directory; relative paths are resolved from that directory. Use it when the agent is operating from one repository but needs to commit, create a PR, or inspect reviews in another.
