@@ -52,6 +52,8 @@ Every tool that creates or publishes content shows a review step before executin
 
 - **`git_add_pr_comment`** — add a top-level conversation comment to a pull request. Review the body before it's posted.
 
+- **`git_add_issue_comment`** — add a comment to a GitHub issue. Review the body before it's posted.
+
 - **`git_reply_to_pr_thread`** — reply to an inline review thread. The review step lets you accept the reply body, with an "Accept & resolve" option that posts the reply and resolves the thread in one go. Thread IDs come from `git_pr_comments`.
 
 All tools accept an optional `workingDir` parameter. It defaults to pi's current working directory; relative paths are resolved from that directory. Use it when the agent is operating from one repository but needs to commit, create a PR, or inspect reviews in another.

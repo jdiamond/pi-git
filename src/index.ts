@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { register as registerAddIssueComment } from "./tools/add-issue-comment.ts";
 import { register as registerAddPrComment } from "./tools/add-pr-comment.ts";
 import { register as registerAmend } from "./tools/amend.ts";
 import { register as registerCommit } from "./tools/commit.ts";
@@ -15,6 +16,7 @@ export default function (pi: ExtensionAPI) {
 	registerAmend(pi);
 	registerCreatePr(pi);
 	registerAddPrComment(pi);
+	registerAddIssueComment(pi);
 	registerReadPrComments(pi);
 	registerReplyToPrThread(pi);
 	registerGitDiff(pi);
