@@ -50,6 +50,8 @@ Every tool that creates or publishes content shows a review step before executin
 
 - **`git_create_pr`** — create a pull request with optional reviewers, draft flag, and target branch. Review the title and body before it goes out.
 
+- **`git_create_issue`** — create an issue with an optional body, assignees, labels, and milestone. Review the details before it goes out.
+
 - **`git_add_pr_comment`** — add a top-level conversation comment to a pull request. Review the body before it's posted.
 
 - **`git_add_issue_comment`** — add a comment to a GitHub issue. Review the body before it's posted.

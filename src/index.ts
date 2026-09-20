@@ -3,6 +3,7 @@ import { register as registerAddIssueComment } from "./tools/add-issue-comment.t
 import { register as registerAddPrComment } from "./tools/add-pr-comment.ts";
 import { register as registerAmend } from "./tools/amend.ts";
 import { register as registerCommit } from "./tools/commit.ts";
+import { register as registerCreateIssue } from "./tools/create-issue.ts";
 import { register as registerCreatePr } from "./tools/create-pr.ts";
 import { register as registerGitDiff } from "./tools/git-diff.ts";
 import { register as registerGitLog } from "./tools/git-log.ts";
@@ -15,6 +16,7 @@ export default function (pi: ExtensionAPI) {
 	registerCommit(pi);
 	registerAmend(pi);
 	registerCreatePr(pi);
+	registerCreateIssue(pi);
 	registerAddPrComment(pi);
 	registerAddIssueComment(pi);
 	registerReadPrComments(pi);
