@@ -10,7 +10,11 @@ import {
 	runCommit,
 	stageFiles,
 } from "../git.ts";
-import { reviewCommit, withReviewLock } from "../review.ts";
+import {
+	createCancelledResult,
+	reviewCommit,
+	withReviewLock,
+} from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -90,7 +94,11 @@ export function register(pi: {
 			);
 
 			if (!result.approved) {
-				throw new Error("Commit cancelled by user.");
+				return createCancelledResult("Commit cancelled by user.", {
+					message: result.message,
+					files,
+					workingDir: cwd,
+				});
 			}
 
 			if (files) {

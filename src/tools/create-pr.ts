@@ -4,7 +4,11 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
-import { createReviewLoop, withReviewLock } from "../review.ts";
+import {
+	createCancelledResult,
+	createReviewLoop,
+	withReviewLock,
+} from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -239,7 +243,10 @@ export function register(pi: {
 			const result = await withReviewLock(() => reviewPr(ctx, prParams));
 
 			if (!result.approved) {
-				throw new Error("PR creation cancelled by user.");
+				return createCancelledResult("PR creation cancelled by user.", {
+					...result.params,
+					workingDir: cwd,
+				});
 			}
 
 			const args = buildPrArgs(result.params);

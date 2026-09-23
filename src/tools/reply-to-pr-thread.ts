@@ -5,7 +5,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo } from "../git.ts";
-import { withReviewLock } from "../review.ts";
+import { createCancelledResult, withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -189,7 +189,12 @@ export function register(pi: {
 			const result = await withReviewLock(() => reviewReply(ctx, params.body));
 
 			if (!result.approved) {
-				throw new Error("Reply cancelled by user.");
+				return createCancelledResult("Reply cancelled by user.", {
+					threadId: params.threadId,
+					body: result.body,
+					resolved: result.resolve,
+					workingDir: cwd,
+				});
 			}
 
 			return executeReply(cwd, params.threadId, result);

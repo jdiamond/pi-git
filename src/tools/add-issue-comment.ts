@@ -4,7 +4,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
-import { withReviewLock } from "../review.ts";
+import { createCancelledResult, withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -73,7 +73,11 @@ export function register(pi: {
 			);
 
 			if (!result.approved) {
-				throw new Error("Comment cancelled by user.");
+				return createCancelledResult("Comment cancelled by user.", {
+					number: params.number,
+					body: result.body,
+					workingDir: cwd,
+				});
 			}
 
 			try {

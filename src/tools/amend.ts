@@ -4,7 +4,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { getStagedFiles, isGitRepo, runGit, stageFiles } from "../git.ts";
-import { withReviewLock } from "../review.ts";
+import { createCancelledResult, withReviewLock } from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -72,29 +72,28 @@ function buildSummary(state: AmendReviewState): string {
 async function reviewAmend(
 	ctx: ExtensionContext,
 	state: AmendReviewState,
-): Promise<void> {
+): Promise<{ message: string; approved: boolean }> {
+	let message = state.amendMessage;
+
 	for (;;) {
-		const summary = buildSummary(state);
+		const summary = buildSummary({ ...state, amendMessage: message });
 		const choice = await ctx.ui.select(`📝 Amend Commit:\n\n${summary}`, [
 			"Approve",
 			"Edit",
 			"Cancel",
 		]);
 
-		if (choice === "Approve") return;
+		if (choice === "Approve") return { message, approved: true };
 		if (choice === "Cancel" || choice === undefined) {
-			throw new Error("Amend cancelled by user.");
+			return { message, approved: false };
 		}
 
-		const edited = await ctx.ui.editor(
-			"Edit commit message:",
-			state.amendMessage,
-		);
+		const edited = await ctx.ui.editor("Edit commit message:", message);
 		if (edited === undefined || edited.trim() === "") {
-			throw new Error("Amend cancelled by user.");
+			return { message, approved: false };
 		}
 
-		state.amendMessage = edited;
+		message = edited;
 	}
 }
 
@@ -145,13 +144,21 @@ export function register(pi: {
 				amendMessage: params.message ?? (await getLastCommitMessage(cwd)),
 			};
 
-			await withReviewLock(() => reviewAmend(ctx, state));
+			const result = await withReviewLock(() => reviewAmend(ctx, state));
+
+			if (!result.approved) {
+				return createCancelledResult("Amend cancelled by user.", {
+					message: result.message,
+					files: state.files,
+					workingDir: cwd,
+				});
+			}
 
 			if (state.files) {
 				await stageFiles(cwd, state.files);
 			}
 
-			const output = await runAmend(cwd, state.amendMessage);
+			const output = await runAmend(cwd, result.message);
 
 			return {
 				content: [
@@ -161,7 +168,7 @@ export function register(pi: {
 					},
 				],
 				details: {
-					message: state.amendMessage,
+					message: result.message,
 					files: state.files,
 					output,
 					workingDir: cwd,

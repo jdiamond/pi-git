@@ -52,6 +52,16 @@ export async function reviewCommit(
 	}
 }
 
+export function createCancelledResult<
+	Details extends Record<string, unknown>,
+>(text: string, details: Details) {
+	return {
+		content: [{ type: "text" as const, text }],
+		details: { ...details, cancelled: true },
+		terminate: true,
+	};
+}
+
 export type ReviewAction<Params> = (
 	ctx: ExtensionContext,
 	params: Params,
