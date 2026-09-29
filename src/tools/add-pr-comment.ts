@@ -4,7 +4,11 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo, runGh } from "../git.ts";
-import { createCancelledResult, withReviewLock } from "../review.ts";
+import {
+	createCancelledResult,
+	formatReviewPreview,
+	withReviewLock,
+} from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -18,11 +22,10 @@ async function reviewComment(
 	let currentBody = body;
 
 	for (;;) {
-		const choice = await ctx.ui.select(`📝 Add PR Comment:\n\n${currentBody}`, [
-			"Approve",
-			"Edit",
-			"Cancel",
-		]);
+		const choice = await ctx.ui.select(
+			formatReviewPreview(`📝 Add PR Comment:\n\n${currentBody}`),
+			["Approve", "Edit", "Cancel"],
+		);
 
 		if (choice === "Approve") {
 			return { body: currentBody, approved: true };

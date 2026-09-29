@@ -2,6 +2,23 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 let reviewQueue: Promise<void> = Promise.resolve();
 
+const REVIEW_PREVIEW_MAX_LINES = 20;
+const REVIEW_PREVIEW_MAX_CHARS = 2000;
+
+export function formatReviewPreview(text: string): string {
+	const lines = text.split("\\n");
+	const preview = lines.slice(0, REVIEW_PREVIEW_MAX_LINES).join("\\n");
+	if (
+		lines.length <= REVIEW_PREVIEW_MAX_LINES &&
+		text.length <= REVIEW_PREVIEW_MAX_CHARS
+	) {
+		return text;
+	}
+
+	const shortened = preview.slice(0, REVIEW_PREVIEW_MAX_CHARS);
+	return `${shortened}\\n\\n… preview truncated; choose Edit to inspect or change the full text.`;
+}
+
 export async function withReviewLock<T>(fn: () => Promise<T>): Promise<T> {
 	let release = (): void => {};
 	const next = new Promise<void>((resolve) => {
@@ -32,11 +49,10 @@ export async function reviewCommit(
 		: `📝 Git Commit:\n\n`;
 
 	for (;;) {
-		const choice = await ctx.ui.select(`${header}${message}`, [
-			"Accept",
-			"Edit",
-			"Cancel",
-		]);
+		const choice = await ctx.ui.select(
+			`${formatReviewPreview(`${header}${message}`)}`,
+			["Accept", "Edit", "Cancel"],
+		);
 
 		if (choice === "Accept") return { message, approved: true };
 		if (choice === "Cancel" || choice === undefined) {
@@ -52,9 +68,10 @@ export async function reviewCommit(
 	}
 }
 
-export function createCancelledResult<
-	Details extends Record<string, unknown>,
->(text: string, details: Details) {
+export function createCancelledResult<Details extends Record<string, unknown>>(
+	text: string,
+	details: Details,
+) {
 	return {
 		content: [{ type: "text" as const, text }],
 		details: { ...details, cancelled: true },
@@ -84,11 +101,10 @@ export function createReviewLoop<Params>({
 
 		for (;;) {
 			const summary = format(current);
-			const choice = await ctx.ui.select(`${label(current)}${summary}`, [
-				"Accept",
-				"Edit",
-				"Cancel",
-			]);
+			const choice = await ctx.ui.select(
+				`${formatReviewPreview(`${label(current)}${summary}`)}`,
+				["Accept", "Edit", "Cancel"],
+			);
 
 			if (choice === "Accept") return { params: current, approved: true };
 			if (choice === "Cancel" || choice === undefined) {

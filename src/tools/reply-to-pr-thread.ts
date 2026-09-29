@@ -5,7 +5,11 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { isGitRepo } from "../git.ts";
-import { createCancelledResult, withReviewLock } from "../review.ts";
+import {
+	createCancelledResult,
+	formatReviewPreview,
+	withReviewLock,
+} from "../review.ts";
 import {
 	resolveWorkingDir,
 	type WorkingDirParam,
@@ -80,7 +84,7 @@ async function reviewReply(
 
 	for (;;) {
 		const choice = await ctx.ui.select(
-			`📝 Reply to PR thread:\n\n${currentBody}`,
+			formatReviewPreview(`📝 Reply to PR thread:\n\n${currentBody}`),
 			["Accept & resolve", "Accept", "Edit", "Cancel"],
 		);
 
